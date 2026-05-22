@@ -371,10 +371,12 @@ main {
   overflow: hidden;
 }
 
+.about__photo,
 .about__image {
   width: 100%;
   min-height: 320px;
   object-fit: cover;
+  aspect-ratio: 4 / 5;
 }
 
 .about__card-copy {
