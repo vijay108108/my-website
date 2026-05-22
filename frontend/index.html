@@ -35,7 +35,7 @@
           <li><a href="#experience">Experience</a></li>
           <li><a href="#contact">Contact</a></li>
         </ul>
-        <a class="button button--primary" href="Vijay-Vishwakarma-Resume.pdf" download>Resume</a>
+        <button class="button button--primary" id="resumeDownloadBtn" type="button">Resume</button>
       </div>
     </nav>
   </header>
@@ -48,7 +48,7 @@
         <p>Technology leader shaping cloud, DevOps, AI, and GenAI strategies for growth-focused organizations.</p>
         <div class="hero__actions">
           <a class="button button--primary" href="#contact">Book a Consultation</a>
-          <a class="button button--ghost" href="Vijay-Vishwakarma-Resume.pdf" download>Download Resume</a>
+          <button class="button button--ghost" id="heroResumeBtn" type="button">Download Resume</button>
         </div>
         <div class="hero__panel hero__metrics">
           <article class="hero-card">
@@ -246,7 +246,7 @@
             <a href="https://www.facebook.com" target="_blank" rel="noopener" aria-label="Facebook">Facebook</a>
           </div>
         </div>
-        <form class="contact-form" action="#" method="post">
+        <form class="contact-form" id="contactForm" action="#" method="post">
           <label>
             <span>Name</span>
             <input type="text" name="name" placeholder="Your full name" required>
@@ -260,6 +260,7 @@
             <textarea name="message" rows="5" placeholder="Tell me about your project" required></textarea>
           </label>
           <button class="button button--primary" type="submit">Send Message</button>
+          <p class="contact-status" id="contactStatus"></p>
         </form>
       </div>
     </section>

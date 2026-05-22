@@ -611,6 +611,109 @@ main {
   color: #79ffe1;
 }
 
+.contact-status {
+  margin-top: 14px;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+}
+
+.admin-page {
+  min-height: calc(100vh - 86px);
+  padding: 42px 24px 60px;
+  background: linear-gradient(180deg, rgba(6, 7, 14, 1), rgba(12, 14, 23, 0.96));
+}
+
+.admin-panel,
+.admin-dashboard {
+  max-width: 1180px;
+  margin: 0 auto;
+  border-radius: 32px;
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.22);
+}
+
+.admin-form {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-form label {
+  display: grid;
+  gap: 10px;
+  color: rgba(242, 247, 255, 0.9);
+}
+
+.admin-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 30px;
+}
+
+.admin-card {
+  padding: 24px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+}
+
+.admin-card h3 {
+  margin: 0 0 14px;
+  color: rgba(242, 247, 255, 0.9);
+}
+
+.admin-card p {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.admin-grid {
+  display: grid;
+  gap: 30px;
+}
+
+.admin-section h2 {
+  margin-bottom: 18px;
+  color: #ffffff;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 16px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(242, 247, 255, 0.85);
+  text-align: left;
+}
+
+.admin-table th {
+  color: rgba(255, 255, 255, 0.95);
+  text-transform: uppercase;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+}
+
+.admin-table tbody tr:hover {
+  background: rgba(121, 255, 225, 0.06);
+}
+
+.hidden {
+  display: none;
+}
+
 .social-links {
   display: flex;
   flex-wrap: wrap;

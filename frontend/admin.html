@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Vijay Vishwakarma</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header admin-header">
+    <div class="navbar admin-navbar">
+      <div class="navbar__brand">
+        <div>
+          <span class="brand__name">Portfolio Admin</span>
+          <small>Secure dashboard</small>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-page">
+    <section class="admin-panel" id="loginPanel">
+      <h1>Admin Login</h1>
+      <form id="adminLoginForm" class="admin-form">
+        <label>
+          <span>Email</span>
+          <input type="email" id="adminEmail" placeholder="admin@example.com" required>
+        </label>
+        <label>
+          <span>Password</span>
+          <input type="password" id="adminPassword" placeholder="********" required>
+        </label>
+        <button class="button button--primary" type="submit">Sign In</button>
+        <p class="contact-status" id="adminLoginStatus"></p>
+      </form>
+    </section>
+
+    <section class="admin-dashboard hidden" id="dashboardPanel">
+      <div class="admin-summary">
+        <article class="admin-card">
+          <h3>Inquiries</h3>
+          <p id="inquiryCount">0</p>
+        </article>
+        <article class="admin-card">
+          <h3>Resume Downloads</h3>
+          <p id="downloadCount">0</p>
+        </article>
+      </div>
+
+      <div class="admin-grid">
+        <div class="admin-section">
+          <h2>Recent Inquiries</h2>
+          <div class="admin-table-wrap">
+            <table class="admin-table" id="inquiryTable">
+              <thead>
+                <tr><th>Name</th><th>Email</th><th>Message</th><th>Date</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="admin-section">
+          <h2>Recent Downloads</h2>
+          <div class="admin-table-wrap">
+            <table class="admin-table" id="downloadTable">
+              <thead>
+                <tr><th>File</th><th>IP</th><th>Agent</th><th>Date</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
