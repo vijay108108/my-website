@@ -24,3 +24,9 @@ window.addEventListener('click', (event) => {
     navToggle.setAttribute('aria-expanded', 'false');
   }
 });
+
+const header = document.querySelector('.site-header');
+window.addEventListener('scroll', () => {
+  if (!header) return;
+  header.classList.toggle('scrolled', window.scrollY > 20);
+});
