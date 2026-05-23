@@ -37,15 +37,16 @@ const connectDB = async () => {
     // Provide helpful error messages based on error type
     if (error.message.includes('authentication failed')) {
       console.error('  → Check your MongoDB Atlas username and password');
-      console.error('  → Ensure IP address is whitelisted in MongoDB Atlas Network Access');
+      console.error('  → Ensure the password is URL-encoded if it contains special characters');
+      console.error('  → Ensure IP address is whitelisted in MongoDB Atlas Network Access or set to allow access from anywhere');
     } else if (error.message.includes('ECONNREFUSED')) {
       console.error('  → Cannot reach MongoDB server. Check connection string');
     } else if (error.message.includes('MONGO_URI')) {
       console.error('  → Please set MONGO_URI environment variable');
     }
 
-    // Exit process after 5 seconds to allow logs to be flushed
-    setTimeout(() => process.exit(1), 5000);
+    // Reject the promise so the server does not start on failed DB connection
+    throw error;
   }
 };
 
