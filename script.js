@@ -82,7 +82,7 @@ if (contactForm) {
 }
 
 window.addEventListener('click', (event) => {
-  if (!event.target.closest('.navbar') && navMenu.classList.contains('open')) {
+  if (navMenu && navToggle && !event.target.closest('.navbar') && navMenu.classList.contains('open')) {
     navMenu.classList.remove('open');
     navToggle.setAttribute('aria-expanded', 'false');
   }

@@ -5,17 +5,22 @@ const DownloadLog = require('../models/DownloadLog');
 const validateAdmin = (email, password) => {
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
+  
   if (!adminEmail || !adminPassword) {
+    console.error('Admin credentials not configured in environment variables');
     return false;
   }
+  
   return email === adminEmail && password === adminPassword;
 };
 
-const createToken = (payload) => jwt.sign(
-  payload,
-  process.env.JWT_SECRET || 'portfolio-secret',
-  { expiresIn: '8h' }
-);
+const createToken = (payload) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET not configured');
+  }
+  
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '8h' });
+};
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -25,11 +30,17 @@ exports.login = async (req, res) => {
   }
 
   if (!validateAdmin(email, password)) {
+    console.warn(`Failed login attempt with email: ${email}`);
     return res.status(401).json({ error: 'Invalid credentials.' });
   }
 
-  const token = createToken({ email });
-  res.json({ token });
+  try {
+    const token = createToken({ email, iat: Date.now() });
+    res.json({ token, expiresIn: '8h' });
+  } catch (error) {
+    console.error('Token creation failed:', error.message);
+    return res.status(500).json({ error: 'Unable to create authentication token' });
+  }
 };
 
 exports.getStats = async (req, res, next) => {
@@ -40,6 +51,7 @@ exports.getStats = async (req, res, next) => {
 
     res.json({ inquiryCount, downloadCount, latestInquiry });
   } catch (error) {
+    console.error('Error fetching stats:', error.message);
     next(error);
   }
 };
@@ -49,6 +61,7 @@ exports.listInquiries = async (req, res, next) => {
     const inquiries = await Inquiry.find().sort({ createdAt: -1 }).limit(50);
     res.json(inquiries);
   } catch (error) {
+    console.error('Error fetching inquiries:', error.message);
     next(error);
   }
 };
@@ -58,6 +71,7 @@ exports.listDownloads = async (req, res, next) => {
     const downloads = await DownloadLog.find().sort({ createdAt: -1 }).limit(50);
     res.json(downloads);
   } catch (error) {
+    console.error('Error fetching downloads:', error.message);
     next(error);
   }
 };

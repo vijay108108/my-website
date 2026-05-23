@@ -1,36 +1,58 @@
 const nodemailer = require('nodemailer');
 
 const sendInquiryEmail = async ({ name, email, message }) => {
-  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error('Email configuration is missing in environment variables.');
+  // Validate email configuration
+  const requiredEnvVars = ['EMAIL_HOST', 'EMAIL_USER', 'EMAIL_PASS'];
+  const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+  
+  if (missingVars.length > 0) {
+    throw new Error(`Email configuration incomplete. Missing: ${missingVars.join(', ')}`);
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT || 587),
-    secure: process.env.EMAIL_SECURE === 'true',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT || 587),
+      secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for 587
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      connectionTimeout: 10000,
+      socketTimeout: 10000,
+    });
 
-  const adminRecipient = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
-  const subject = `New portfolio inquiry from ${name}`;
-  const html = `
-    <h2>New inquiry received</h2>
-    <p><strong>Name:</strong> ${name}</p>
-    <p><strong>Email:</strong> ${email}</p>
-    <p><strong>Message:</strong></p>
-    <p>${message}</p>
-  `;
+    // Test connection
+    await transporter.verify();
 
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-    to: adminRecipient,
-    subject,
-    html,
-  });
+    const adminRecipient = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+    const subject = `New portfolio inquiry from ${name}`;
+    const html = `
+      <h2>New Inquiry Received</h2>
+      <p><strong>Name:</strong> ${name}</p>
+      <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+      <p><strong>Message:</strong></p>
+      <p>${message.replace(/\n/g, '<br>')}</p>
+      <hr>
+      <p><small>This message was sent from your portfolio website.</small></p>
+    `;
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || `"Portfolio" <${process.env.EMAIL_USER}>`,
+      to: adminRecipient,
+      replyTo: email,
+      subject,
+      html,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.response);
+    
+    return info;
+  } catch (error) {
+    console.error('Email sending error:', error.message);
+    throw new Error(`Failed to send email: ${error.message}`);
+  }
 };
 
 module.exports = { sendInquiryEmail };
