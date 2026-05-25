@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const contactRoutes = require('./routes/contact');
@@ -14,6 +15,19 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+let server = null;
+let startupPromise = null;
+
+const getDbStatus = () => {
+  const states = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting',
+  };
+
+  return states[mongoose.connection.readyState] || 'unknown';
+};
 
 // Middleware
 app.use(cors());
@@ -28,7 +42,11 @@ app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', environment: process.env.NODE_ENV || 'development' });
+  res.json({
+    status: 'ok',
+    environment: process.env.NODE_ENV || 'development',
+    database: getDbStatus(),
+  });
 });
 
 // Static file serving - serve frontend files from root directory
@@ -41,6 +59,7 @@ const adminPath = path.resolve(frontendPath, 'admin.html');
 // Log paths on startup for debugging
 console.log(`[Path Debug] __dirname: ${__dirname}`);
 console.log(`[Path Debug] frontendPath: ${frontendPath}`);
+console.log(`[Path Debug] publicPath: ${publicPath}`);
 console.log(`[Path Debug] indexPath: ${indexPath}`);
 console.log(`[Path Debug] indexPath exists: ${fs.existsSync(indexPath)}`);
 
@@ -48,7 +67,7 @@ console.log(`[Path Debug] indexPath exists: ${fs.existsSync(indexPath)}`);
 app.use(express.static(frontendPath));
 
 // Route for admin page
-app.get('/admin', (req, res, next) => {
+app.get('/admin', (req, res) => {
   res.sendFile(adminPath, (err) => {
     if (err) {
       console.error('[Error] Failed to send admin.html:', err.message);
@@ -59,13 +78,12 @@ app.get('/admin', (req, res, next) => {
 });
 
 // Fallback route for SPA - serve index.html for all non-API routes
-app.get('*', (req, res, next) => {
+app.get('*', (req, res) => {
   res.sendFile(indexPath, (err) => {
     if (err) {
       console.error('[Error] Failed to send index.html:', err.message);
       console.error('[Error] Attempted path:', indexPath);
       console.error('[Error] File exists:', fs.existsSync(indexPath));
-      // Fallback: send a simple HTML response
       return res.status(200).send(`
         <!DOCTYPE html>
         <html>
@@ -88,49 +106,91 @@ app.get('*', (req, res, next) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+  const isMongoConnectionError =
+    err.name === 'MongooseError' ||
+    err.name === 'MongoServerSelectionError' ||
+    err.name === 'MongoNetworkError';
+  const status = err.status || (isMongoConnectionError ? 503 : 500);
+
   console.error('[Error] Unhandled error:', {
-    status: err.status || 500,
+    status,
     message: err.message,
     path: req.path,
     method: req.method,
     url: req.url,
   });
-  
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error',
-    status: err.status || 500,
+
+  res.status(status).json({
+    error: isMongoConnectionError ? 'Database is currently unavailable' : err.message || 'Internal server error',
+    status,
     path: req.path,
   });
 });
 
-// Connect to MongoDB and start server
-connectDB()
-  .then(() => {
-    const server = app.listen(PORT, () => {
+const startServer = async () => {
+  if (server) {
+    return server;
+  }
+
+  if (startupPromise) {
+    return startupPromise;
+  }
+
+  startupPromise = (async () => {
+    const dbConnection = await connectDB();
+
+    if (!dbConnection) {
+      console.warn('[Startup] MongoDB is unavailable. Starting HTTP server in degraded mode.');
+    }
+
+    server = app.listen(PORT, () => {
       console.log(`
-╔════════════════════════════════════════════════╗
-║         Server Started Successfully             ║
-╚════════════════════════════════════════════════╝
-✓ Server running on port ${PORT}
-✓ Environment: ${process.env.NODE_ENV || 'development'}
-✓ Frontend path: ${frontendPath}
-✓ Index.html exists: ${fs.existsSync(indexPath)}
-✓ Admin.html exists: ${fs.existsSync(adminPath)}
-✓ Node version: ${process.version}
-✓ Platform: ${process.platform}
+===============================================
+Server Started Successfully
+-----------------------------------------------
+Server running on port ${PORT}
+Environment: ${process.env.NODE_ENV || 'development'}
+Database: ${getDbStatus()}
+Frontend path: ${frontendPath}
+Index.html exists: ${fs.existsSync(indexPath)}
+Admin.html exists: ${fs.existsSync(adminPath)}
+Node version: ${process.version}
+Platform: ${process.platform}
+===============================================
       `);
     });
 
-    // Graceful shutdown
-    process.on('SIGTERM', () => {
-      console.log('SIGTERM received, shutting down gracefully...');
-      server.close(() => {
-        console.log('Server closed');
-        process.exit(0);
-      });
+    return server;
+  })();
+
+  return startupPromise;
+};
+
+const shutdown = (signal) => {
+  console.log(`${signal} received, shutting down gracefully...`);
+
+  const closeDatabase = () => {
+    mongoose.connection.close(false).finally(() => {
+      console.log('MongoDB connection closed');
+      process.exit(0);
     });
-  })
-  .catch((error) => {
-    console.error('✗ Failed to start server:', error.message);
-    process.exit(1);
+  };
+
+  if (!server) {
+    closeDatabase();
+    return;
+  }
+
+  server.close(() => {
+    console.log('Server closed');
+    closeDatabase();
   });
+};
+
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));
+
+startServer().catch((error) => {
+  console.error('[Startup] Failed to start HTTP server:', error.message);
+  process.exit(1);
+});
