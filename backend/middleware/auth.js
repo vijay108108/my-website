@@ -4,7 +4,10 @@ const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token format' });
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized: Missing or invalid token format',
+    });
   }
 
   const token = authHeader.split(' ')[1];
@@ -12,7 +15,10 @@ const authMiddleware = (req, res, next) => {
   // Check if JWT_SECRET is configured
   if (!process.env.JWT_SECRET) {
     console.error('JWT_SECRET is not configured');
-    return res.status(500).json({ error: 'Server configuration error' });
+    return res.status(500).json({
+      success: false,
+      error: 'Server configuration error',
+    });
   }
 
   try {
@@ -21,12 +27,12 @@ const authMiddleware = (req, res, next) => {
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Token expired' });
+      return res.status(401).json({ success: false, error: 'Token expired' });
     }
     if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ error: 'Invalid token' });
+      return res.status(401).json({ success: false, error: 'Invalid token' });
     }
-    return res.status(401).json({ error: 'Authentication failed' });
+    return res.status(401).json({ success: false, error: 'Authentication failed' });
   }
 };
 

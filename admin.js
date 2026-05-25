@@ -14,6 +14,20 @@ const setToken = token => localStorage.setItem('adminToken', token);
 
 const formatDate = iso => new Date(iso).toLocaleString();
 
+const readJsonResponse = async response => {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error('Server returned an invalid response. Please try again.');
+  }
+};
+
 const fetchDashboard = async () => {
   try {
     const token = getToken();
@@ -35,9 +49,11 @@ const fetchDashboard = async () => {
       throw new Error('Failed to load admin data.');
     }
 
-    const stats = await statsRes.json();
-    const inquiries = await inquiriesRes.json();
-    const downloads = await downloadsRes.json();
+    const stats = await readJsonResponse(statsRes);
+    const inquiriesData = await readJsonResponse(inquiriesRes);
+    const downloadsData = await readJsonResponse(downloadsRes);
+    const inquiries = Array.isArray(inquiriesData.inquiries) ? inquiriesData.inquiries : [];
+    const downloads = Array.isArray(downloadsData.downloads) ? downloadsData.downloads : [];
 
     inquiryCount.textContent = stats.inquiryCount || 0;
     downloadCount.textContent = stats.downloadCount || 0;
@@ -99,11 +115,11 @@ adminLoginForm.addEventListener('submit', async event => {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await readJsonResponse(response);
       throw new Error(error.error || 'Unable to sign in');
     }
 
-    const data = await response.json();
+    const data = await readJsonResponse(response);
     setToken(data.token);
     showDashboard();
   } catch (error) {

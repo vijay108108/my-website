@@ -26,20 +26,20 @@ exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
+    return res.status(400).json({ success: false, error: 'Email and password are required.' });
   }
 
   if (!validateAdmin(email, password)) {
     console.warn(`Failed login attempt with email: ${email}`);
-    return res.status(401).json({ error: 'Invalid credentials.' });
+    return res.status(401).json({ success: false, error: 'Invalid credentials.' });
   }
 
   try {
     const token = createToken({ email, iat: Date.now() });
-    res.json({ token, expiresIn: '8h' });
+    return res.status(200).json({ success: true, token, expiresIn: '8h' });
   } catch (error) {
     console.error('Token creation failed:', error.message);
-    return res.status(500).json({ error: 'Unable to create authentication token' });
+    return res.status(500).json({ success: false, error: 'Unable to create authentication token' });
   }
 };
 
@@ -49,29 +49,29 @@ exports.getStats = async (req, res, next) => {
     const downloadCount = await DownloadLog.countDocuments();
     const latestInquiry = await Inquiry.findOne().sort({ createdAt: -1 });
 
-    res.json({ inquiryCount, downloadCount, latestInquiry });
+    return res.status(200).json({ success: true, inquiryCount, downloadCount, latestInquiry });
   } catch (error) {
     console.error('Error fetching stats:', error.message);
-    next(error);
+    return next(error);
   }
 };
 
 exports.listInquiries = async (req, res, next) => {
   try {
     const inquiries = await Inquiry.find().sort({ createdAt: -1 }).limit(50);
-    res.json(inquiries);
+    return res.status(200).json({ success: true, inquiries });
   } catch (error) {
     console.error('Error fetching inquiries:', error.message);
-    next(error);
+    return next(error);
   }
 };
 
 exports.listDownloads = async (req, res, next) => {
   try {
     const downloads = await DownloadLog.find().sort({ createdAt: -1 }).limit(50);
-    res.json(downloads);
+    return res.status(200).json({ success: true, downloads });
   } catch (error) {
     console.error('Error fetching downloads:', error.message);
-    next(error);
+    return next(error);
   }
 };

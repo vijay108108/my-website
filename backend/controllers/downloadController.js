@@ -12,11 +12,12 @@ exports.trackDownload = async (req, res, next) => {
 
     await log.save();
 
-    res.json({
+    return res.status(200).json({
+      success: true,
       message: 'Download tracked successfully.',
       resumeUrl: `/${fileName}`,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };

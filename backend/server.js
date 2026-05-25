@@ -42,7 +42,8 @@ app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({
+  return res.status(200).json({
+    success: true,
     status: 'ok',
     environment: process.env.NODE_ENV || 'development',
     database: getDbStatus(),
@@ -65,6 +66,15 @@ console.log(`[Path Debug] indexPath exists: ${fs.existsSync(indexPath)}`);
 
 // Serve static assets (CSS, JS, images, etc.)
 app.use(express.static(frontendPath));
+
+// API fallback - keep API responses JSON even when a route is missing
+app.use('/api', (req, res) => {
+  return res.status(404).json({
+    success: false,
+    error: 'API endpoint not found',
+    path: req.originalUrl,
+  });
+});
 
 // Route for admin page
 app.get('/admin', (req, res) => {
@@ -106,6 +116,10 @@ app.get('*', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
   const isMongoConnectionError =
     err.name === 'MongooseError' ||
     err.name === 'MongoServerSelectionError' ||
@@ -121,6 +135,7 @@ app.use((err, req, res, next) => {
   });
 
   res.status(status).json({
+    success: false,
     error: isMongoConnectionError ? 'Database is currently unavailable' : err.message || 'Internal server error',
     status,
     path: req.path,

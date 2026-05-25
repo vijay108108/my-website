@@ -23,6 +23,20 @@ const contactStatus = document.getElementById('contactStatus');
 const resumeDownloadBtn = document.getElementById('resumeDownloadBtn');
 const heroResumeBtn = document.getElementById('heroResumeBtn');
 
+const readJsonResponse = async (response) => {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error('Server returned an invalid response. Please try again.');
+  }
+};
+
 const trackResumeDownload = async () => {
   try {
     await fetch('/api/download', {
@@ -66,16 +80,17 @@ if (contactForm) {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const data = await readJsonResponse(response);
+
       if (!response.ok) {
-        throw new Error(data.error || 'Unable to send message');
+        throw new Error(data.error || data.message || 'Unable to send message');
       }
 
-      contactStatus.textContent = 'Message sent successfully. I will get back to you soon.';
+      contactStatus.textContent = data.message || 'Message sent successfully. I will get back to you soon.';
       contactStatus.style.color = '#79ffe1';
       contactForm.reset();
     } catch (error) {
-      contactStatus.textContent = error.message;
+      contactStatus.textContent = error.message || 'Unable to send message. Please try again.';
       contactStatus.style.color = '#ff7a7a';
     }
   });
