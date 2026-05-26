@@ -20,6 +20,13 @@ const getMongoErrorHints = (error) => {
     return ['Check the MongoDB host or cluster name in MONGO_URI.'];
   }
 
+  if (message.includes('ECONNREFUSED 127.0.0.1') || message.includes('ECONNREFUSED ::1')) {
+    return [
+      'Local MongoDB is not running on port 27017.',
+      'Start the MongoDB service locally, or set MONGO_URI to your real MongoDB Atlas connection string.',
+    ];
+  }
+
   if (message.includes('ECONNREFUSED') || message.includes('Server selection timed out')) {
     return [
       'Ensure MongoDB Atlas Network Access allows this service.',
@@ -32,6 +39,23 @@ const getMongoErrorHints = (error) => {
   }
 
   return ['Review MONGO_URI, Atlas network access, and database user permissions.'];
+};
+
+const validateMongoUri = (mongoUri) => {
+  if (/username:password|cluster0\.example|cluster\.mongodb\.net/i.test(mongoUri)) {
+    throw new Error(
+      'MONGO_URI is still using placeholder values. Set it to your local MongoDB URI or real MongoDB Atlas connection string.'
+    );
+  }
+};
+
+const getMongoTarget = (mongoUri) => {
+  try {
+    const url = new URL(mongoUri);
+    return `${url.protocol}//${url.host}${url.pathname || ''}`;
+  } catch (error) {
+    return 'invalid MONGO_URI';
+  }
 };
 
 const registerConnectionListeners = () => {
@@ -73,8 +97,9 @@ const connectDB = async () => {
       );
     }
 
+    validateMongoUri(mongoUri);
     registerConnectionListeners();
-    console.log('[MongoDB] Connecting...');
+    console.log(`[MongoDB] Connecting to ${getMongoTarget(mongoUri)}...`);
 
     connectionPromise = mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 5000,

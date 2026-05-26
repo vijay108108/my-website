@@ -11,7 +11,14 @@ const contactRoutes = require('./routes/contact');
 const adminRoutes = require('./routes/admin');
 const downloadRoutes = require('./routes/download');
 
-dotenv.config();
+const envPath = path.resolve(__dirname, '.env');
+const envResult = dotenv.config({ path: envPath });
+
+if (envResult.error) {
+  console.warn(`[Env] Local .env file not loaded from ${envPath}. Using process environment variables.`);
+} else {
+  console.log(`[Env] Loaded environment variables from ${envPath}`);
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,8 +36,23 @@ const getDbStatus = () => {
   return states[mongoose.connection.readyState] || 'unknown';
 };
 
+const allowedOrigins = [
+  'http://localhost:5000',
+  'http://127.0.0.1:5000',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+];
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || process.env.NODE_ENV === 'production' || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(null, true);
+  },
+}));
 app.use(helmet());
 app.use(express.json());
 app.use(morgan('dev'));

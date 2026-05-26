@@ -23,6 +23,27 @@ const contactStatus = document.getElementById('contactStatus');
 const resumeDownloadBtn = document.getElementById('resumeDownloadBtn');
 const heroResumeBtn = document.getElementById('heroResumeBtn');
 
+const LOCAL_API_BASE_URL = 'http://localhost:5000';
+
+const getApiBaseUrl = () => {
+  if (window.API_BASE_URL) {
+    return window.API_BASE_URL.replace(/\/$/, '');
+  }
+
+  const isFilePage = window.location.protocol === 'file:';
+  const isLocalPage = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+  const isBackendPort = window.location.port === '5000';
+
+  if (isFilePage || (isLocalPage && !isBackendPort)) {
+    return LOCAL_API_BASE_URL;
+  }
+
+  return '';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+const apiUrl = (path) => `${API_BASE_URL}${path}`;
+
 const readJsonResponse = async (response) => {
   const text = await response.text();
 
@@ -37,9 +58,17 @@ const readJsonResponse = async (response) => {
   }
 };
 
+const getRequestErrorMessage = (error) => {
+  if (error instanceof TypeError) {
+    return 'Unable to connect to the backend. Make sure it is running at http://localhost:5000.';
+  }
+
+  return error.message || 'Unable to send message. Please try again.';
+};
+
 const trackResumeDownload = async () => {
   try {
-    await fetch('/api/download', {
+    await fetch(apiUrl('/api/download'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fileName: 'Vijay-Vishwakarma-Resume.pdf' }),
@@ -74,7 +103,10 @@ if (contactForm) {
     };
 
     try {
-      const response = await fetch('/api/contact', {
+      contactStatus.textContent = 'Sending...';
+      contactStatus.style.color = '#d8e7ff';
+
+      const response = await fetch(apiUrl('/api/contact'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -90,7 +122,7 @@ if (contactForm) {
       contactStatus.style.color = '#79ffe1';
       contactForm.reset();
     } catch (error) {
-      contactStatus.textContent = error.message || 'Unable to send message. Please try again.';
+      contactStatus.textContent = getRequestErrorMessage(error);
       contactStatus.style.color = '#ff7a7a';
     }
   });

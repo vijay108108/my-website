@@ -4,8 +4,14 @@ const { sendInquiryEmail } = require('../utils/email');
 exports.submitInquiry = async (req, res, next) => {
   try {
     const { name, email, message } = req.body || {};
+    console.log('[Contact] Submission received:', {
+      hasName: Boolean(name),
+      hasEmail: Boolean(email),
+      hasMessage: Boolean(message),
+    });
 
     if (!name || !email || !message) {
+      console.warn('[Contact] Validation failed: missing required fields');
       return res.status(400).json({
         success: false,
         error: 'Name, email, and message are required.',
@@ -14,6 +20,7 @@ exports.submitInquiry = async (req, res, next) => {
 
     const inquiry = new Inquiry({ name, email, message });
     await inquiry.save();
+    console.log('[Contact] Inquiry saved:', inquiry._id.toString());
 
     let emailNotification = {
       sent: false,
@@ -47,6 +54,7 @@ exports.submitInquiry = async (req, res, next) => {
       emailNotification,
     });
   } catch (error) {
+    console.error('[Contact] Submission failed:', error.message);
     return next(error);
   }
 };
